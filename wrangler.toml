@@ -1,0 +1,4 @@
+name = "spelltable"
+main = "src/worker.js"
+compatibility_date = "2024-03-05"
+workers_dev = true
