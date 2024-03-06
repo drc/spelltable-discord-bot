@@ -2,17 +2,17 @@
  * The core server that runs on a Cloudflare worker.
  */
 
-import { Router } from 'itty-router';
-import { InteractionResponseType, InteractionType, verifyKey } from 'discord-interactions';
-// import { AWW_COMMAND, INVITE_COMMAND } from './commands.js';
-import { InteractionResponseFlags } from 'discord-interactions';
+import { Router } from "itty-router";
+import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
+import { HAD_IT_COMMAND, INVITE_COMMAND } from "./commands.js";
+import { InteractionResponseFlags } from "discord-interactions";
 
 class JsonResponse extends Response {
 	constructor(body, init) {
 		const jsonBody = JSON.stringify(body);
 		init = init || {
 			headers: {
-				'content-type': 'application/json;charset=UTF-8',
+				"content-type": "application/json;charset=UTF-8",
 			},
 		};
 		super(jsonBody, init);
@@ -24,7 +24,7 @@ const router = Router();
 /**
  * A simple :wave: hello page to verify the worker is working.
  */
-router.get('/', (request, env) => {
+router.get("/", (request, env) => {
 	return new Response(`👋 ${env.DISCORD_APPLICATION_ID}`);
 });
 
@@ -33,10 +33,10 @@ router.get('/', (request, env) => {
  * include a JSON payload described here:
  * https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
  */
-router.post('/', async (request, env) => {
+router.post("/", async (request, env) => {
 	const { isValid, interaction } = await server.verifyDiscordRequest(request, env);
 	if (!isValid || !interaction) {
-		return new Response('Bad request signature.', { status: 401 });
+		return new Response("Bad request signature.", { status: 401 });
 	}
 
 	if (interaction.type === InteractionType.PING) {
@@ -50,12 +50,13 @@ router.post('/', async (request, env) => {
 	if (interaction.type === InteractionType.APPLICATION_COMMAND) {
 		// Most user commands will come as `APPLICATION_COMMAND`.
 		switch (interaction.data.name.toLowerCase()) {
-			case AWW_COMMAND.name.toLowerCase(): {
-				const cuteUrl = await getCuteUrl();
+			case HAD_IT_COMMAND.name.toLowerCase(): {
+				// const cuteUrl = await getCuteUrl();
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
-						content: cuteUrl,
+						content: "https://i.pinimg.com/736x/f2/c0/1a/f2c01a4cc18f18b16f4adb71e1835314.jpg",
+						flags: InteractionResponseFlags.EPHEMERAL,
 					},
 				});
 			}
@@ -71,19 +72,19 @@ router.post('/', async (request, env) => {
 				});
 			}
 			default:
-				return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
+				return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
 		}
 	}
 
-	console.error('Unknown Type');
-	return new JsonResponse({ error: 'Unknown Type' }, { status: 400 });
+	console.error("Unknown Type");
+	return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
 });
 
-router.all('*', () => new Response('Not Found.', { status: 404 }));
+router.all("*", () => new Response("Not Found.", { status: 404 }));
 
 async function verifyDiscordRequest(request, env) {
-	const signature = request.headers.get('x-signature-ed25519');
-	const timestamp = request.headers.get('x-signature-timestamp');
+	const signature = request.headers.get("x-signature-ed25519");
+	const timestamp = request.headers.get("x-signature-timestamp");
 	const body = await request.text();
 	const isValidRequest = signature && timestamp && verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY);
 	if (!isValidRequest) {
