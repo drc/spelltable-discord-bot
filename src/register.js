@@ -1,4 +1,4 @@
-import { HAD_IT_COMMAND, INVITE_COMMAND } from "./commands.js";
+import * as command from "./commands.js";
 import dotenv from "dotenv";
 import process from "node:process";
 
@@ -36,7 +36,7 @@ async function registerCommands(url) {
 			Authorization: `Bot ${token}`,
 		},
 		method: "PUT",
-		body: JSON.stringify([HAD_IT_COMMAND, INVITE_COMMAND]),
+		body: JSON.stringify([command.HAD_IT_COMMAND, command.INVITE_COMMAND, command.RANDOM_COMMAND]),
 	});
 
 	if (response.ok) {

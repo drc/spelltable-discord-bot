@@ -4,8 +4,9 @@
 
 import { Router } from "itty-router";
 import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
-import { HAD_IT_COMMAND, INVITE_COMMAND } from "./commands.js";
+import { HAD_IT_COMMAND, INVITE_COMMAND, RANDOM_COMMAND } from "./commands.js";
 import { InteractionResponseFlags } from "discord-interactions";
+import { getRandomUrl } from "./scryfall.js";
 
 class JsonResponse extends Response {
 	constructor(body, init) {
@@ -68,6 +69,15 @@ router.post("/", async (request, env) => {
 					data: {
 						content: INVITE_URL,
 						flags: InteractionResponseFlags.EPHEMERAL,
+					},
+				});
+			}
+			case RANDOM_COMMAND.name.toLowerCase(): {
+				const randomUrl = await getRandomUrl();
+				return new JsonResponse({
+					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					data: {
+						content: randomUrl,
 					},
 				});
 			}
