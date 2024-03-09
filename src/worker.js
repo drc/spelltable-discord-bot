@@ -4,19 +4,25 @@
 
 import { Router } from "itty-router";
 import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
-import { HAD_IT_COMMAND, INVITE_COMMAND, RANDOM_COMMAND } from "./commands.js";
+import * as command from "./commands.js";
 import { InteractionResponseFlags } from "discord-interactions";
 import { getRandomUrl } from "./scryfall.js";
 
 class JsonResponse extends Response {
+	/**
+	 * Constructor for initializing the class with the given body and optional init object.
+	 *
+	 * @param {Object} body - The body to be converted to JSON and sent in the request.
+	 * @param {Object} init - (Optional) The initialization object including headers and other configurations.
+	 */
 	constructor(body, init) {
 		const jsonBody = JSON.stringify(body);
-		init = init || {
+		let localInit = init || {
 			headers: {
 				"content-type": "application/json;charset=UTF-8",
 			},
 		};
-		super(jsonBody, init);
+		super(jsonBody, localInit);
 	}
 }
 
@@ -25,7 +31,7 @@ const router = Router();
 /**
  * A simple :wave: hello page to verify the worker is working.
  */
-router.get("/", (request, env) => {
+router.get("/", (_, env) => {
 	return new Response(`👋 ${env.DISCORD_APPLICATION_ID}`);
 });
 
@@ -51,7 +57,7 @@ router.post("/", async (request, env) => {
 	if (interaction.type === InteractionType.APPLICATION_COMMAND) {
 		// Most user commands will come as `APPLICATION_COMMAND`.
 		switch (interaction.data.name.toLowerCase()) {
-			case HAD_IT_COMMAND.name.toLowerCase(): {
+			case command.HAD_IT_COMMAND.name.toLowerCase(): {
 				// const cuteUrl = await getCuteUrl();
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -61,7 +67,7 @@ router.post("/", async (request, env) => {
 					},
 				});
 			}
-			case INVITE_COMMAND.name.toLowerCase(): {
+			case command.INVITE_COMMAND.name.toLowerCase(): {
 				const applicationId = env.DISCORD_APPLICATION_ID;
 				const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${applicationId}&scope=applications.commands`;
 				return new JsonResponse({
@@ -72,12 +78,22 @@ router.post("/", async (request, env) => {
 					},
 				});
 			}
-			case RANDOM_COMMAND.name.toLowerCase(): {
+			case command.RANDOM_COMMAND.name.toLowerCase(): {
 				const randomUrl = await getRandomUrl();
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: randomUrl,
+					},
+				});
+			}
+			case command.NEW_GAME_COMMAND.name.toLowerCase(): {
+				// generate a new game object and send it back
+				return new JsonResponse({
+					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					data: {
+						content: "New Game Started",
+						flags: InteractionResponseFlags.EPHEMERAL,
 					},
 				});
 			}
@@ -92,6 +108,13 @@ router.post("/", async (request, env) => {
 
 router.all("*", () => new Response("Not Found.", { status: 404 }));
 
+/**
+ * Asynchronously verifies a Discord request.
+ *
+ * @param {Object} request - the request object
+ * @param {Object} env - the environment object
+ * @return {Object} an object containing the result of the verification
+ */
 async function verifyDiscordRequest(request, env) {
 	const signature = request.headers.get("x-signature-ed25519");
 	const timestamp = request.headers.get("x-signature-timestamp");

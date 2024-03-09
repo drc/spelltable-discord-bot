@@ -1,4 +1,4 @@
-import * as command from "./commands.js";
+import { COMMAND_LIST } from "./commands.js";
 import dotenv from "dotenv";
 import process from "node:process";
 
@@ -29,6 +29,12 @@ async function registerGlobalCommands() {
 	await registerCommands(url);
 }
 
+/**
+ * Asynchronously registers commands using the provided URL.
+ *
+ * @param {string} url - The URL to register the commands.
+ * @return {Promise<Response>} The response from the registration request.
+ */
 async function registerCommands(url) {
 	const response = await fetch(url, {
 		headers: {
@@ -36,7 +42,7 @@ async function registerCommands(url) {
 			Authorization: `Bot ${token}`,
 		},
 		method: "PUT",
-		body: JSON.stringify([command.HAD_IT_COMMAND, command.INVITE_COMMAND, command.RANDOM_COMMAND]),
+		body: JSON.stringify(COMMAND_LIST),
 	});
 
 	if (response.ok) {
