@@ -6,7 +6,7 @@ import { Router } from "itty-router";
 import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
 import * as command from "./commands.js";
 import { InteractionResponseFlags } from "discord-interactions";
-import { getRandomUrl, getNamedUrl, getAutoCompleteNames } from "./scryfall.js";
+import { getRandomUrl, getNamedUrl, getAutoCompleteNames, getAutoCompleteSets } from "./scryfall.js";
 
 class JsonResponse extends Response {
 	/**
@@ -79,9 +79,36 @@ router.post("/", async (request, env) => {
 				});
 			}
 			case command.CARD_COMMAND.name.toLowerCase(): {
-				const query = interaction.data?.options ? interaction?.data?.options[0]?.value : null;
-				if (query) {
-					const { namedUrl, externalUrl } = await getNamedUrl(query);
+				const cardName = interaction.data?.options ? interaction?.data?.options[0]?.value : null;
+				const set = interaction.data?.options ? interaction?.data?.options[1]?.value : null;
+				if (set) {
+					const { cardImages } = await getAutoCompleteSets(cardName);
+					const card = cardImages.filter((card) => card.set === set);
+					if (card.length > 0) {
+						const { url, uri } = card[0];
+						return new JsonResponse({
+							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+							data: {
+								content: url,
+								components: [
+									{
+										type: 1,
+										components: [
+											{
+												type: 2,
+												style: 5,
+												label: "View on Scryfall",
+												url: uri,
+											},
+										],
+									},
+								],
+							},
+						});
+					}
+				}
+				if (cardName) {
+					const { namedUrl, externalUrl } = await getNamedUrl(cardName);
 					if (!namedUrl) {
 						return new JsonResponse({
 							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -136,16 +163,35 @@ router.post("/", async (request, env) => {
 
 	if (interaction.type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
 		// Autocomplete interactions will come as `APPLICATION_COMMAND_AUTOCOMPLETE`.
-		const names = await getAutoCompleteNames(interaction.data?.options[0]?.value);
-		return new JsonResponse({
-			type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
-			data: {
-				choices: names.map((name) => ({
-					name,
-					value: name,
-				})),
-			},
-		});
+		// console.log("Autocomplete", interaction.data);
+		const searcher = interaction.data.options.filter((option) => option.focused)[0].name;
+		switch (searcher) {
+			case command.CARD_COMMAND.options[0].name: {
+				const names = await getAutoCompleteNames(interaction.data?.options[0]?.value);
+				return new JsonResponse({
+					type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+					data: {
+						choices: names.map((name) => ({
+							name,
+							value: name,
+						})),
+					},
+				});
+			}
+			case command.CARD_COMMAND.options[1].name: {
+				const { sets: mtgset } = await getAutoCompleteSets(interaction.data?.options[0]?.value);
+				const filteredSet = mtgset.filter((s) => s.set.startsWith(interaction.data?.options[1]?.value));
+				return new JsonResponse({
+					type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+					data: {
+						choices: filteredSet.map((set) => ({
+							name: `${set.set.toUpperCase()} (${set.collector_number})`,
+							value: set.set,
+						})),
+					},
+				});
+			}
+		}
 	}
 
 	console.error("Unknown Type");

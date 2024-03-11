@@ -14,6 +14,13 @@ export const CARD_COMMAND = {
 			required: true,
 			autocomplete: true,
 		},
+		{
+			type: 3,
+			name: "set",
+			description: "The set of the card",
+			required: false,
+			autocomplete: true,
+		},
 	],
 };
 
