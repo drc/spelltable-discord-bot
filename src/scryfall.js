@@ -37,7 +37,18 @@ export async function getNamedUrl(query) {
 		return null;
 	}
 	const data = await response.json();
-	return { namedUrl: data.image_uris.large, externalUrl: data.scryfall_uri, printsSearchUri: data.prints_search_uri }; // url for a named card
+	if (data.card_faces) {
+		return {
+			namedUrl: [data.card_faces[0].image_uris?.large, data.card_faces[1].image_uris?.large].join(" "),
+			externalUrl: data.scryfall_uri,
+			printsSearchUri: data.prints_search_uri,
+		};
+	}
+	return {
+		namedUrl: data.image_uris?.large || data.image_uris?.normal || data.image_uris?.small,
+		externalUrl: data.scryfall_uri,
+		printsSearchUri: data.prints_search_uri,
+	}; // url for a named card
 }
 
 export async function getAutoCompleteNames(query) {
@@ -72,7 +83,7 @@ export async function getAutoCompleteSets(query) {
 		cardImages: result.data.map((x) => ({
 			set: x.set,
 			collector_number: x.collector_number,
-			url: x.image_uris.large,
+			url: x.image_uris?.large || x.image_uris?.normal || x.image_uris?.small,
 			uri: x.scryfall_uri,
 		})),
 	};

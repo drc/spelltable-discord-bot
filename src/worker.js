@@ -3,9 +3,15 @@
  */
 
 import { Router } from "itty-router";
-import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
+import {
+	InteractionResponseType,
+	InteractionType,
+	verifyKey,
+	InteractionResponseFlags,
+	MessageComponentTypes,
+	ButtonStyleTypes,
+} from "discord-interactions";
 import * as command from "./commands.js";
-import { InteractionResponseFlags } from "discord-interactions";
 import { getRandomUrl, getNamedUrl, getAutoCompleteNames, getAutoCompleteSets } from "./scryfall.js";
 
 class JsonResponse extends Response {
@@ -58,7 +64,6 @@ router.post("/", async (request, env) => {
 		// Most user commands will come as `APPLICATION_COMMAND`.
 		switch (interaction.data.name.toLowerCase()) {
 			case command.HAD_IT_COMMAND.name.toLowerCase(): {
-				// const cuteUrl = await getCuteUrl();
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
@@ -92,11 +97,11 @@ router.post("/", async (request, env) => {
 								content: url,
 								components: [
 									{
-										type: 1,
+										type: MessageComponentTypes.ACTION_ROW,
 										components: [
 											{
-												type: 2,
-												style: 5,
+												type: MessageComponentTypes.BUTTON,
+												style: ButtonStyleTypes.LINK,
 												label: "View on Scryfall",
 												url: uri,
 											},
@@ -109,11 +114,12 @@ router.post("/", async (request, env) => {
 				}
 				if (cardName) {
 					const { namedUrl, externalUrl } = await getNamedUrl(cardName);
+					console.log(namedUrl, externalUrl);
 					if (!namedUrl) {
 						return new JsonResponse({
 							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 							data: {
-								content: "# No cards found\nYour search didn’t match any cards.",
+								content: "# No cards found\nYour search didn't match any cards.",
 							},
 						});
 					}
@@ -152,7 +158,25 @@ router.post("/", async (request, env) => {
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: "New Game Started",
-						flags: InteractionResponseFlags.EPHEMERAL,
+						components: [
+							{
+								type: 1,
+								components: [
+									{
+										type: 2,
+										style: 1,
+										label: "Join Game",
+										custom_id: "join_game",
+									},
+									{
+										type: 2,
+										style: 2,
+										label: "Start Game",
+										custom_id: "start_game",
+									},
+								],
+							},
+						],
 					},
 				});
 			}
@@ -194,7 +218,123 @@ router.post("/", async (request, env) => {
 		}
 	}
 
-	console.error("Unknown Type");
+	if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
+		console.log(interaction.data?.custom_id);
+		switch (interaction.data?.custom_id) {
+			case "join_game": {
+				return new JsonResponse({
+					type: InteractionResponseType.UPDATE_MESSAGE,
+					data: {
+						content: `${interaction.message.content}\n<@${interaction.member.user.id}> has joined the game`,
+						components: [
+							{
+								type: 1,
+								components: [
+									{
+										type: 2,
+										style: 1,
+										label: "Join Game",
+										custom_id: "join_game",
+									},
+									{
+										type: 2,
+										style: 2,
+										label: "Start Game",
+										custom_id: "start_game",
+									},
+								],
+							},
+						],
+					},
+				});
+			}
+			case "start_game": {
+				const players = interaction.message.content.match(/<@\d+>/g);
+				console.log(players);
+				return new JsonResponse({
+					type: InteractionResponseType.UPDATE_MESSAGE,
+					data: {
+						content: `${players.map((p) => `${p} : 40\n`)}`,
+						components: [
+							{
+								type: 1,
+								components: [
+									{
+										type: 2,
+										style: 4,
+										label: "-10",
+										custom_id: "sub_10",
+									},
+									{
+										type: 2,
+										style: 4,
+										label: "-1",
+										custom_id: "sub_1",
+									},
+									{
+										type: 2,
+										style: 3,
+										label: "+1",
+										custom_id: "add_1",
+									},
+									{
+										type: 2,
+										style: 3,
+										label: "+10",
+										custom_id: "add_10",
+									},
+								],
+							},
+						],
+					},
+				});
+			}
+			case "sub_10":
+			case "sub_1":
+			case "add_1":
+			case "add_10":
+				return new JsonResponse({
+					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					data: {
+						content: "test",
+						components: [
+							{
+								type: 1,
+								components: [
+									{
+										type: 2,
+										style: 4,
+										label: "-10",
+										custom_id: "sub_10",
+									},
+									{
+										type: 2,
+										style: 4,
+										label: "-1",
+										custom_id: "sub_1",
+									},
+									{
+										type: 2,
+										style: 3,
+										label: "+1",
+										custom_id: "add_1",
+									},
+									{
+										type: 2,
+										style: 3,
+										label: "+10",
+										custom_id: "add_10",
+									},
+								],
+							},
+						],
+					},
+				});
+			default:
+				return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
+		}
+	}
+
 	return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
 });
 
