@@ -3,14 +3,16 @@ export const HAD_IT_COMMAND = {
 	description: "When you've just about had it.",
 };
 
-export const RANDOM_COMMAND = {
-	name: "random",
-	description: "Get a random card image",
+export const CARD_COMMAND = {
+	name: "card",
+	description: "Search for a card image.",
 	options: [
 		{
 			type: 3,
-			name: "text",
-			description: "tesing input",
+			name: "name",
+			description: "The name of the card",
+			required: true,
+			autocomplete: true,
 		},
 	],
 };
@@ -25,4 +27,4 @@ export const INVITE_COMMAND = {
 	description: "Get an invite link to add the bot to your server",
 };
 
-export const COMMAND_LIST = [HAD_IT_COMMAND, RANDOM_COMMAND, INVITE_COMMAND, NEW_GAME_COMMAND];
+export const COMMAND_LIST = [HAD_IT_COMMAND, CARD_COMMAND, INVITE_COMMAND, NEW_GAME_COMMAND];

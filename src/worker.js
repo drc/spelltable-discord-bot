@@ -6,7 +6,7 @@ import { Router } from "itty-router";
 import { InteractionResponseType, InteractionType, verifyKey } from "discord-interactions";
 import * as command from "./commands.js";
 import { InteractionResponseFlags } from "discord-interactions";
-import { getRandomUrl } from "./scryfall.js";
+import { getRandomUrl, getNamedUrl, getAutoCompleteNames } from "./scryfall.js";
 
 class JsonResponse extends Response {
 	/**
@@ -78,7 +78,39 @@ router.post("/", async (request, env) => {
 					},
 				});
 			}
-			case command.RANDOM_COMMAND.name.toLowerCase(): {
+			case command.CARD_COMMAND.name.toLowerCase(): {
+				const query = interaction.data?.options ? interaction?.data?.options[0]?.value : null;
+				if (query) {
+					const { namedUrl, externalUrl } = await getNamedUrl(query);
+					if (!namedUrl) {
+						return new JsonResponse({
+							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+							data: {
+								content: "# No cards found\nYour search didn’t match any cards.",
+							},
+						});
+					}
+					return new JsonResponse({
+						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						data: {
+							content: namedUrl,
+							components: [
+								{
+									type: 1,
+									components: [
+										{
+											type: 2,
+											style: 5,
+											label: "View on Scryfall",
+											url: externalUrl,
+										},
+									],
+								},
+							],
+						},
+					});
+				}
+
 				const randomUrl = await getRandomUrl();
 				return new JsonResponse({
 					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -100,6 +132,20 @@ router.post("/", async (request, env) => {
 			default:
 				return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
 		}
+	}
+
+	if (interaction.type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
+		// Autocomplete interactions will come as `APPLICATION_COMMAND_AUTOCOMPLETE`.
+		const names = await getAutoCompleteNames(interaction.data?.options[0]?.value);
+		return new JsonResponse({
+			type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+			data: {
+				choices: names.map((name) => ({
+					name,
+					value: name,
+				})),
+			},
+		});
 	}
 
 	console.error("Unknown Type");

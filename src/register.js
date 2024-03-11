@@ -8,6 +8,8 @@ import process from "node:process";
  * to be run once.
  */
 
+// console.log(COMMAND_LIST);
+
 dotenv.config({ path: ".dev.vars" });
 
 const token = process.env.DISCORD_TOKEN;
