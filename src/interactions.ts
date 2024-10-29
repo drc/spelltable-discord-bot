@@ -26,48 +26,13 @@ export const handleApplicationCommand = async (interaction, env): Promise<Respon
 	return new Response("Command not found", { status: 404 });
 };
 
-export const handleApplicationAutoComplete = async (interaction, env): Promise<Response> => {
-	console.log("Autocomplete", interaction.data);
-	// Autocomplete interactions will come as `APPLICATION_COMMAND_AUTOCOMPLETE`.
-	// console.log("Autocomplete", interaction.data);
+export const handleApplicationAutoComplete = async (interaction): Promise<Response> => {
 	const { name: autoCompleteCommand } = interaction.data;
 	switch (autoCompleteCommand) {
 		case command.CARD_COMMAND.name: {
 			return await handleCardAutocompleteCommand(interaction);
 		}
 	}
-	const searcher = interaction.data.options.filter((option) => option.focused)[0].name;
-	switch (searcher) {
-		case command.CARD_COMMAND.options?.[0]?.name: {
-			const names = await scry.getAutoCompleteNames(interaction.data?.options[0]?.value);
-			return new JsonResponse({
-				type: dsi.InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
-				data: {
-					choices: names.map((name) => ({
-						name,
-						value: name,
-					})),
-				},
-			});
-		}
-		case command.CARD_COMMAND.options?.[1]?.name:
-			{
-				const acResult = await scry.getAutoCompleteSets(interaction.data?.options[0]?.value);
-				if (acResult) {
-					const { sets: mtgset } = acResult;
-					const filteredSet = mtgset.filter((s) => s.set.startsWith(interaction.data?.options[1]?.value));
-					return new JsonResponse({
-						type: dsi.InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
-						data: {
-							choices: filteredSet.map((s) => ({
-								name: `${s.set.toUpperCase()} (${s.collector_number})`,
-								value: s.set,
-							})),
-						},
-					});
-				}
-			}
-			return new Response("Command not found", { status: 404 });
-	}
+
 	return new Response("Command not found", { status: 404 });
 };
