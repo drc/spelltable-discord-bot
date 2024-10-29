@@ -1,9 +1,25 @@
-export const HAD_IT_COMMAND = {
+import * as dsi from "discord-interactions";
+
+interface Command {
+	name: string;
+	description: string;
+	options?: Option[];
+}
+
+interface Option {
+	type: number;
+	name: string;
+	description: string;
+	required: boolean;
+	autocomplete?: boolean;
+}
+
+export const HAD_IT_COMMAND: Command = {
 	name: "hadit",
 	description: "When you've just about had it.",
 };
 
-export const CARD_COMMAND = {
+export const CARD_COMMAND: Command = {
 	name: "card",
 	description: "Search for a card image.",
 	options: [
@@ -24,12 +40,12 @@ export const CARD_COMMAND = {
 	],
 };
 
-export const NEW_GAME_COMMAND = {
+export const NEW_GAME_COMMAND: Command = {
 	name: "newgame",
 	description: "Start a new game",
 };
 
-export const INVITE_COMMAND = {
+export const INVITE_COMMAND: Command = {
 	name: "invite",
 	description: "Get an invite link to add the bot to your server",
 };
