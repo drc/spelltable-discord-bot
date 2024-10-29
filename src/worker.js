@@ -3,48 +3,40 @@
  */
 
 import { Router } from "itty-router";
-import {
-	InteractionResponseType,
-	InteractionType,
-	verifyKey,
-	InteractionResponseFlags,
-	MessageComponentTypes,
-	ButtonStyleTypes,
-} from "discord-interactions";
+import * as dsi from "discord-interactions";
 import * as command from "./commands.js";
 import { getRandomUrl, getNamedUrl, getAutoCompleteNames, getAutoCompleteSets } from "./scryfall.js";
+import * as act from "./interactions.js";
+import JsonResponse from "./response.js";
 
-class JsonResponse extends Response {
-	/**
-	 * Constructor for initializing the class with the given body and optional init object.
-	 *
-	 * @param {Object} body - The body to be converted to JSON and sent in the request.
-	 * @param {Object} init - (Optional) The initialization object including headers and other configurations.
-	 */
-	constructor(body, init) {
-		const jsonBody = JSON.stringify(body);
-		let localInit = init || {
-			headers: {
-				"content-type": "application/json;charset=UTF-8",
-			},
-		};
-		super(jsonBody, localInit);
-	}
-}
-
+/**
+ * The router for handling incoming requests from Discord.
+ * @see https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
+ *
+ * @type {Router}
+ * @see https://itty.dev/
+ */
 const router = Router();
 
 /**
- * A simple :wave: hello page to verify the worker is working.
+ * Route for the `/` endpoint.  This is used to verify that the webhook is
+ * configured properly.
+ *
+ * @param {Request} request - the request object
+ * @param {Object} env - the environment object
+ * @return {Response} an object containing the result of the verification
  */
 router.get("/", (_, env) => {
 	return new Response(`👋 ${env.DISCORD_APPLICATION_ID}`);
 });
 
 /**
- * Main route for all requests sent from Discord.  All incoming messages will
- * include a JSON payload described here:
- * https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object
+ * Main route for the application.  This is used to handle
+ * incoming requests from Discord.
+ *
+ * @param {Request} request - the request object
+ * @param {Object} env - the environment object
+ * @return {Response} an object containing the result of the verification
  */
 router.post("/", async (request, env) => {
 	const { isValid, interaction } = await server.verifyDiscordRequest(request, env);
@@ -52,56 +44,68 @@ router.post("/", async (request, env) => {
 		return new Response("Bad request signature.", { status: 401 });
 	}
 
-	if (interaction.type === InteractionType.PING) {
-		// The `PING` message is used during the initial webhook handshake, and is
-		// required to configure the webhook in the developer portal.
-		return new JsonResponse({
-			type: InteractionResponseType.PONG,
-		});
+	switch (interaction.type) {
+		case dsi.InteractionType.PING: {
+			// The `PING` message is used during the initial webhook handshake, and is
+			// required to configure the webhook in the developer portal.
+			return new JsonResponse({
+				type: dsi.InteractionResponseType.PONG,
+			});
+		}
+		case dsi.InteractionType.APPLICATION_COMMAND:
+			return act.handleApplicationCommand(interaction, env);
+		case dsi.InteractionType.MESSAGE_COMPONENT:
+			break;
+		case dsi.InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
+			break;
+		default:
+			return new Response("Unsupported interaction type.", { status: 400 });
 	}
 
-	if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-		// Most user commands will come as `APPLICATION_COMMAND`.
+	// Most user commands will come as `APPLICATION_COMMAND`.
+	if (interaction.type === dsi.InteractionType.APPLICATION_COMMAND) {
 		switch (interaction.data.name.toLowerCase()) {
+			// These commands are just for testing.
 			case command.HAD_IT_COMMAND.name.toLowerCase(): {
 				return new JsonResponse({
-					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: "https://i.pinimg.com/736x/f2/c0/1a/f2c01a4cc18f18b16f4adb71e1835314.jpg",
-						flags: InteractionResponseFlags.EPHEMERAL,
+						flags: dsi.InteractionResponseFlags.EPHEMERAL,
 					},
 				});
 			}
+			// commands for inviting
 			case command.INVITE_COMMAND.name.toLowerCase(): {
-				const applicationId = env.DISCORD_APPLICATION_ID;
-				const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${applicationId}&scope=applications.commands`;
+				const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${env.DISCORD_APPLICATION_ID}&scope=applications.commands`;
 				return new JsonResponse({
-					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: INVITE_URL,
-						flags: InteractionResponseFlags.EPHEMERAL,
+						flags: dsi.InteractionResponseFlags.EPHEMERAL,
 					},
 				});
 			}
+			// commands for searching cards
 			case command.CARD_COMMAND.name.toLowerCase(): {
-				const cardName = interaction.data?.options ? interaction?.data?.options[0]?.value : null;
-				const set = interaction.data?.options ? interaction?.data?.options[1]?.value : null;
+				const cardName = interaction?.data?.options[0]?.value ?? null;
+				const set = interaction?.data?.options[1]?.value ?? null;
 				if (set) {
 					const { cardImages } = await getAutoCompleteSets(cardName);
 					const card = cardImages.filter((card) => card.set === set);
 					if (card.length > 0) {
 						const { url, uri } = card[0];
 						return new JsonResponse({
-							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+							type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 							data: {
 								content: url,
 								components: [
 									{
-										type: MessageComponentTypes.ACTION_ROW,
+										type: dsi.MessageComponentTypes.ACTION_ROW,
 										components: [
 											{
-												type: MessageComponentTypes.BUTTON,
-												style: ButtonStyleTypes.LINK,
+												type: dsi.MessageComponentTypes.BUTTON,
+												style: dsi.ButtonStyleTypes.LINK,
 												label: "View on Scryfall",
 												url: uri,
 											},
@@ -117,23 +121,23 @@ router.post("/", async (request, env) => {
 					console.log(namedUrl, externalUrl);
 					if (!namedUrl) {
 						return new JsonResponse({
-							type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+							type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 							data: {
 								content: "# No cards found\nYour search didn't match any cards.",
 							},
 						});
 					}
 					return new JsonResponse({
-						type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+						type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 						data: {
 							content: namedUrl,
 							components: [
 								{
-									type: 1,
+									type: dsi.MessageComponentTypes.ACTION_ROW,
 									components: [
 										{
-											type: 2,
-											style: 5,
+											type: dsi.MessageComponentTypes.BUTTON,
+											style: dsi.ButtonStyleTypes.LINK,
 											label: "View on Scryfall",
 											url: externalUrl,
 										},
@@ -146,21 +150,22 @@ router.post("/", async (request, env) => {
 
 				const randomUrl = await getRandomUrl();
 				return new JsonResponse({
-					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: randomUrl,
 					},
 				});
 			}
+			// commands for starting a game
 			case command.NEW_GAME_COMMAND.name.toLowerCase(): {
-				// generate a new game object and send it back
+				// return response for new game
 				return new JsonResponse({
-					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: "New Game Started",
 						components: [
 							{
-								type: 1,
+								type: dsi.MessageComponentTypes.ACTION_ROW,
 								components: [
 									{
 										type: 2,
@@ -185,7 +190,7 @@ router.post("/", async (request, env) => {
 		}
 	}
 
-	if (interaction.type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
+	if (interaction.type === dsi.InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
 		// Autocomplete interactions will come as `APPLICATION_COMMAND_AUTOCOMPLETE`.
 		// console.log("Autocomplete", interaction.data);
 		const searcher = interaction.data.options.filter((option) => option.focused)[0].name;
@@ -193,7 +198,7 @@ router.post("/", async (request, env) => {
 			case command.CARD_COMMAND.options[0].name: {
 				const names = await getAutoCompleteNames(interaction.data?.options[0]?.value);
 				return new JsonResponse({
-					type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+					type: dsi.InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
 					data: {
 						choices: names.map((name) => ({
 							name,
@@ -206,11 +211,11 @@ router.post("/", async (request, env) => {
 				const { sets: mtgset } = await getAutoCompleteSets(interaction.data?.options[0]?.value);
 				const filteredSet = mtgset.filter((s) => s.set.startsWith(interaction.data?.options[1]?.value));
 				return new JsonResponse({
-					type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+					type: dsi.InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
 					data: {
-						choices: filteredSet.map((set) => ({
-							name: `${set.set.toUpperCase()} (${set.collector_number})`,
-							value: set.set,
+						choices: filteredSet.map((s) => ({
+							name: `${s.set.toUpperCase()} (${s.collector_number})`,
+							value: s.set,
 						})),
 					},
 				});
@@ -218,12 +223,11 @@ router.post("/", async (request, env) => {
 		}
 	}
 
-	if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-		console.log(interaction.data?.custom_id);
+	if (interaction.type === dsi.InteractionType.MESSAGE_COMPONENT) {
 		switch (interaction.data?.custom_id) {
 			case "join_game": {
 				return new JsonResponse({
-					type: InteractionResponseType.UPDATE_MESSAGE,
+					type: dsi.InteractionResponseType.UPDATE_MESSAGE,
 					data: {
 						content: `${interaction.message.content}\n<@${interaction.member.user.id}> has joined the game`,
 						components: [
@@ -252,7 +256,7 @@ router.post("/", async (request, env) => {
 				const players = interaction.message.content.match(/<@\d+>/g);
 				console.log(players);
 				return new JsonResponse({
-					type: InteractionResponseType.UPDATE_MESSAGE,
+					type: dsi.InteractionResponseType.UPDATE_MESSAGE,
 					data: {
 						content: `${players.map((p) => `${p} : 40\n`)}`,
 						components: [
@@ -294,7 +298,7 @@ router.post("/", async (request, env) => {
 			case "add_1":
 			case "add_10":
 				return new JsonResponse({
-					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 					data: {
 						content: "test",
 						components: [
@@ -351,7 +355,7 @@ async function verifyDiscordRequest(request, env) {
 	const signature = request.headers.get("x-signature-ed25519");
 	const timestamp = request.headers.get("x-signature-timestamp");
 	const body = await request.text();
-	const isValidRequest = signature && timestamp && verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY);
+	const isValidRequest = signature && timestamp && dsi.verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY);
 	if (!isValidRequest) {
 		return { isValid: false };
 	}
