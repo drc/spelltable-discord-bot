@@ -53,11 +53,9 @@ router.post("/", async (request, env) => {
 			});
 		}
 		case dsi.InteractionType.APPLICATION_COMMAND:
-			return act.handleApplicationCommand(interaction, env);
+			return await act.handleApplicationCommand(interaction, env);
 		case dsi.InteractionType.MESSAGE_COMPONENT:
-			break;
 		case dsi.InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
-			break;
 		default:
 			return new Response("Unsupported interaction type.", { status: 400 });
 	}
