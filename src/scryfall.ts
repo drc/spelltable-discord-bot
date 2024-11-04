@@ -5,7 +5,7 @@ export const scryfallAutoCompleteUrl: string = "https://api.scryfall.com/cards/a
  * Reach out to the Scryfall API to get a random card.
  * @returns The url of an image of a card.
  */
-export async function getRandomUrl() {
+export async function getRandomUrl(): Promise<string> {
 	const response: Response = await fetch(scryfallUrl, {
 		headers: {
 			"User-Agent": "spelltable-discord-bot",
