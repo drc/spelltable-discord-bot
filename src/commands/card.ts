@@ -3,8 +3,8 @@ import { InteractionResponseType, MessageComponentTypes, ButtonStyleTypes } from
 import { getRandomUrl, getNamedUrl, getAutoCompleteSets } from "./../scryfall.js";
 
 export default async function handleCardCommand(interaction): Promise<JsonResponse> {
-	const set: String = interaction?.data?.options[1]?.value ?? null;
-	const cardName: String = interaction?.data?.options[0]?.value ?? null;
+	const set: string = interaction?.data?.options[1]?.value ?? "";
+	const cardName: string = interaction?.data?.options[0]?.value ?? "";
 	if (set) {
 		// break early with the custom card
 		return await handleSetCondition(set, cardName);
@@ -23,7 +23,7 @@ export default async function handleCardCommand(interaction): Promise<JsonRespon
 	});
 }
 
-async function handleJustTheCardName(cardName: String): Promise<Response> {
+async function handleJustTheCardName(cardName: string): Promise<Response> {
 	const result = await getNamedUrl(cardName);
 	if (result) {
 		const { namedUrl, externalUrl } = result;
@@ -58,7 +58,7 @@ async function handleJustTheCardName(cardName: String): Promise<Response> {
 	return new Response("Card not found", { status: 404 });
 }
 
-async function handleSetCondition(set, cardName) {
+async function handleSetCondition(set: string, cardName: string): Promise<Response> {
 	const result = await getAutoCompleteSets(cardName);
 	if (result) {
 		const { cardImages } = result;

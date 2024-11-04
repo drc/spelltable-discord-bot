@@ -7,13 +7,10 @@ import process from "node:process";
  * application server.  It's allowed to use node.js primitives, and only needs
  * to be run once.
  */
-
-// console.log(COMMAND_LIST);
-
 dotenv.config({ path: ".dev.vars" });
 
-const token = process.env.DISCORD_TOKEN;
-const applicationId = process.env.DISCORD_APPLICATION_ID;
+const token: string = process.env.DISCORD_TOKEN ?? "";
+const applicationId: string = process.env.DISCORD_APPLICATION_ID ?? "";
 
 if (!token) {
 	throw new Error("The DISCORD_TOKEN environment variable is required.");
@@ -27,7 +24,7 @@ if (!applicationId) {
  * you're sure these are the commands you want.
  */
 async function registerGlobalCommands() {
-	const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
+	const url: string = `https://discord.com/api/v10/applications/${applicationId}/commands`;
 	await registerCommands(url);
 }
 
@@ -37,8 +34,8 @@ async function registerGlobalCommands() {
  * @param {string} url - The URL to register the commands.
  * @return {Promise<Response>} The response from the registration request.
  */
-async function registerCommands(url) {
-	const response = await fetch(url, {
+async function registerCommands(url: string): Promise<Response> {
+	const response: Response = await fetch(url, {
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: `Bot ${token}`,

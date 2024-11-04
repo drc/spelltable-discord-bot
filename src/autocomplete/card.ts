@@ -11,7 +11,7 @@ export default async function handleCardAutocompleteCommand(interaction: Discord
 			return new JsonResponse({
 				type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
 				data: {
-					choices: names.map((name) => ({
+					choices: names.map((name: string) => ({
 						name,
 						value: name,
 					})),
