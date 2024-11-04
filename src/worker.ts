@@ -52,9 +52,9 @@ router.post("/", async (request, env) => {
 		case InteractionType.APPLICATION_COMMAND:
 			return await handleApplicationCommand(interaction, env);
 		case InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
-			return await handleApplicationAutoComplete(interaction, env);
+			return await handleApplicationAutoComplete(interaction);
 		case InteractionType.MESSAGE_COMPONENT:
-			return await handleMessageCommand(interaction, env);
+			return await handleMessageCommand(interaction);
 		default:
 			return new Response("Unsupported interaction type.", { status: 400 });
 	}
