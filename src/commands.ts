@@ -1,5 +1,3 @@
-import * as dsi from "discord-interactions";
-
 interface Command {
 	name: string;
 	description: string;

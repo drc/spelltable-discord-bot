@@ -1,12 +1,12 @@
-export const scryfallUrl = "https://api.scryfall.com/cards/random";
-export const scryfallNamedUrl = "https://api.scryfall.com/cards/named";
-export const scryfallAutoCompleteUrl = "https://api.scryfall.com/cards/autocomplete";
+export const scryfallUrl: string = "https://api.scryfall.com/cards/random";
+export const scryfallNamedUrl: string = "https://api.scryfall.com/cards/named";
+export const scryfallAutoCompleteUrl: string = "https://api.scryfall.com/cards/autocomplete";
 /**
  * Reach out to the Scryfall API to get a random card.
  * @returns The url of an image of a card.
  */
 export async function getRandomUrl() {
-	const response = await fetch(scryfallUrl, {
+	const response: Response = await fetch(scryfallUrl, {
 		headers: {
 			"User-Agent": "spelltable-discord-bot",
 		},
@@ -27,8 +27,15 @@ export async function getRandomUrl() {
 	return data.image_uris.large; // url for a random card
 }
 
-export async function getNamedUrl(query) {
-	const response = await fetch(`${scryfallNamedUrl}?exact=${query}`, {
+interface CardResponse {
+	card_faces: Array<{ image_uris: { large: string } }>;
+	scryfall_uri: string;
+	prints_search_uri: string;
+	image_uris: { large: string; normal: string; small: string } | null;
+}
+
+export async function getNamedUrl(query: string) {
+	const response: Response = await fetch(`${scryfallNamedUrl}?exact=${query}`, {
 		headers: {
 			"User-Agent": "spelltable-discord-bot",
 		},
@@ -36,7 +43,7 @@ export async function getNamedUrl(query) {
 	if (!response.ok) {
 		return null;
 	}
-	const data = await response.json();
+	const data: CardResponse = await response.json();
 	if (data.card_faces) {
 		return {
 			namedUrl: [data.card_faces[0].image_uris?.large, data.card_faces[1].image_uris?.large].join(" "),
@@ -51,7 +58,7 @@ export async function getNamedUrl(query) {
 	}; // url for a named card
 }
 
-export async function getAutoCompleteNames(query) {
+export async function getAutoCompleteNames(query: string) {
 	const response = await fetch(`${scryfallAutoCompleteUrl}?q=${query}`, {
 		headers: {
 			"User-Agent": "spelltable-discord-bot",
@@ -64,8 +71,20 @@ export async function getAutoCompleteNames(query) {
 	return result.data;
 }
 
-export async function getAutoCompleteSets(query) {
-	const { printsSearchUri } = await getNamedUrl(query);
+interface SetResponse {
+	data: Array<{
+		set: string;
+		collector_number: string;
+		image_uris: { large: string; normal: string; small: string } | null;
+		scryfall_uri: string;
+	}>;
+}
+export async function getAutoCompleteSets(query: string) {
+	const namedObj = await getNamedUrl(query);
+	if (!namedObj) {
+		return null;
+	}
+	const { printsSearchUri } = namedObj;
 	const response = await fetch(printsSearchUri, {
 		headers: {
 			"User-Agent": "spelltable-discord-bot",
@@ -74,7 +93,7 @@ export async function getAutoCompleteSets(query) {
 	if (!response.ok) {
 		return null;
 	}
-	const result = await response.json();
+	const result: SetResponse = await response.json();
 	return {
 		sets: result.data.map((x) => ({
 			set: x.set,
@@ -83,7 +102,7 @@ export async function getAutoCompleteSets(query) {
 		cardImages: result.data.map((x) => ({
 			set: x.set,
 			collector_number: x.collector_number,
-			url: x.image_uris?.large || x.image_uris?.normal || x.image_uris?.small,
+			url: (x.image_uris?.large || x.image_uris?.normal || x.image_uris?.small) ?? "",
 			uri: x.scryfall_uri,
 		})),
 	};

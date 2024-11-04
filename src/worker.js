@@ -1,10 +1,9 @@
 /**
  * The core server that runs on a Cloudflare worker.
  */
-
 import { Router } from "itty-router";
-import { InteractionType, verifyKey } from "discord-interactions";
-import {handleApplicationCommand, handleApplicationAutoComplete}  from "./interactions.js";
+import { InteractionType, verifyKey, InteractionResponseType } from "discord-interactions";
+import { handleApplicationCommand, handleApplicationAutoComplete, handleMessageCommand } from "./interactions.js";
 import JsonResponse from "./response.js";
 
 /**
@@ -55,126 +54,10 @@ router.post("/", async (request, env) => {
 		case InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE:
 			return await handleApplicationAutoComplete(interaction, env);
 		case InteractionType.MESSAGE_COMPONENT:
+			return await handleMessageCommand(interaction, env);
 		default:
 			return new Response("Unsupported interaction type.", { status: 400 });
 	}
-	if (interaction.type === dsi.InteractionType.MESSAGE_COMPONENT) {
-		switch (interaction.data?.custom_id) {
-			case "join_game": {
-				return new JsonResponse({
-					type: dsi.InteractionResponseType.UPDATE_MESSAGE,
-					data: {
-						content: `${interaction.message.content}\n<@${interaction.member.user.id}> has joined the game`,
-						components: [
-							{
-								type: 1,
-								components: [
-									{
-										type: 2,
-										style: 1,
-										label: "Join Game",
-										custom_id: "join_game",
-									},
-									{
-										type: 2,
-										style: 2,
-										label: "Start Game",
-										custom_id: "start_game",
-									},
-								],
-							},
-						],
-					},
-				});
-			}
-			case "start_game": {
-				const players = interaction.message.content.match(/<@\d+>/g);
-				console.log(players);
-				return new JsonResponse({
-					type: dsi.InteractionResponseType.UPDATE_MESSAGE,
-					data: {
-						content: `${players.map((p) => `${p} : 40\n`)}`,
-						components: [
-							{
-								type: 1,
-								components: [
-									{
-										type: 2,
-										style: 4,
-										label: "-10",
-										custom_id: "sub_10",
-									},
-									{
-										type: 2,
-										style: 4,
-										label: "-1",
-										custom_id: "sub_1",
-									},
-									{
-										type: 2,
-										style: 3,
-										label: "+1",
-										custom_id: "add_1",
-									},
-									{
-										type: 2,
-										style: 3,
-										label: "+10",
-										custom_id: "add_10",
-									},
-								],
-							},
-						],
-					},
-				});
-			}
-			case "sub_10":
-			case "sub_1":
-			case "add_1":
-			case "add_10":
-				return new JsonResponse({
-					type: dsi.InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-					data: {
-						content: "test",
-						components: [
-							{
-								type: 1,
-								components: [
-									{
-										type: 2,
-										style: 4,
-										label: "-10",
-										custom_id: "sub_10",
-									},
-									{
-										type: 2,
-										style: 4,
-										label: "-1",
-										custom_id: "sub_1",
-									},
-									{
-										type: 2,
-										style: 3,
-										label: "+1",
-										custom_id: "add_1",
-									},
-									{
-										type: 2,
-										style: 3,
-										label: "+10",
-										custom_id: "add_10",
-									},
-								],
-							},
-						],
-					},
-				});
-			default:
-				return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
-		}
-	}
-
-	return new JsonResponse({ error: "Unknown Type" }, { status: 400 });
 });
 
 router.all("*", () => new Response("Not Found.", { status: 404 }));
