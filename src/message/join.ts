@@ -1,12 +1,12 @@
+import { InteractionResponseType, MessageComponentTypes, ButtonStyleTypes } from "discord-interactions";
 import JsonResponse from "../response";
-import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
+import { DiscordInteraction } from "../types";
 
-// return response for new game
-export default function handleGameCommand(): JsonResponse {
+export default function handleJoinMessage(interaction: DiscordInteraction): JsonResponse {
 	return new JsonResponse({
-		type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+		type: InteractionResponseType.UPDATE_MESSAGE,
 		data: {
-			content: "New Game Started",
+			content: `${interaction.message.content}\n<@${interaction.member.user.id}> has joined the game`,
 			components: [
 				{
 					type: MessageComponentTypes.ACTION_ROW,

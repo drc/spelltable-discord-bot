@@ -2,8 +2,9 @@ import JsonResponse from "../response";
 import { InteractionResponseType } from "discord-interactions";
 import { CARD_COMMAND } from "../commands";
 import { getAutoCompleteNames, getAutoCompleteSets } from "../scryfall";
-export default async function handleCardAutocompleteCommand(interaction): Promise<JsonResponse> {
-	const searcher = interaction.data.options.filter((option) => option.focused)[0].name;
+import type { DiscordInteraction } from "../types";
+export default async function handleCardAutocompleteCommand(interaction: DiscordInteraction): Promise<JsonResponse> {
+	const searcher: string = interaction.data.options.filter((option) => option.focused)[0].name;
 	switch (searcher) {
 		case CARD_COMMAND.options?.[0]?.name: {
 			const names = await getAutoCompleteNames(interaction.data?.options[0]?.value);
