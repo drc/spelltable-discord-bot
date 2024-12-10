@@ -32,6 +32,7 @@ interface CardResponse {
 	scryfall_uri: string;
 	prints_search_uri: string;
 	image_uris: { large: string; normal: string; small: string } | null;
+	layout: string;
 }
 
 export async function getNamedUrl(query: string) {
@@ -44,7 +45,7 @@ export async function getNamedUrl(query: string) {
 		return null;
 	}
 	const data: CardResponse = await response.json();
-	if (data.card_faces) {
+	if (data.card_faces.every((face) => face.image_uris)) {
 		return {
 			namedUrl: [data.card_faces[0].image_uris?.large, data.card_faces[1].image_uris?.large].join(" "),
 			externalUrl: data.scryfall_uri,
