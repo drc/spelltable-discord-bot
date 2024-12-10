@@ -3,20 +3,20 @@ import { handleHadItCommand, handleInviteCommand, handleCardCommand, handleNewGa
 import { handleCardAutocompleteCommand } from "./autocomplete/commands.js";
 import { handleJoinMessage, handleLifeCounter, handleStartMessage } from "./message/commands.js";
 import JsonResponse from "./response.js";
-import type { DiscordInteraction, Environment } from "./types.js";
+import type { DiscordInteraction, Env } from "./types.js";
 
 /**
  * Handles incoming application commands and routes them to the appropriate handler.
  *
  * @param {DiscordInteraction} interaction - The interaction object containing the command data.
- * @param {Object} env - The environment object.
+ * @param {Object} env - The Env object.
  * @returns {Promise<Response>} - A promise that resolves to a Response object.
  *
  * This function handles commands such as "hadit", "invite", "card", and "newgame",
  * routing them to their corresponding handlers. If the command is not recognized,
  * it responds with a "Command not found" message.
  */
-export const handleApplicationCommand = async (interaction: DiscordInteraction, env: Environment): Promise<Response> => {
+export const handleApplicationCommand = async (interaction: DiscordInteraction, env: Env): Promise<Response> => {
 	const { name: commandName } = interaction.data;
 	switch (commandName.toLowerCase()) {
 		case command.HAD_IT_COMMAND.name.toLowerCase(): {
@@ -27,7 +27,7 @@ export const handleApplicationCommand = async (interaction: DiscordInteraction, 
 			return handleInviteCommand(env);
 		}
 		case command.CARD_COMMAND.name.toLowerCase(): {
-			return await handleCardCommand(interaction);
+			return await handleCardCommand(interaction, env);
 		}
 		// commands for starting a game
 		case command.NEW_GAME_COMMAND.name.toLowerCase(): {

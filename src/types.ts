@@ -76,6 +76,14 @@ export interface DiscordInteraction {
 	version: number;
 }
 
-export interface Environment {
+import type { KVNamespace } from '@cloudflare/workers-types';
+
+export interface Env {
+	"spelltable-spelltable": KVNamespace;
+	DISCORD_TOKEN: string;
 	DISCORD_APPLICATION_ID: string;
+	DISCORD_PUBLIC_KEY: string;
+	DISCORD_TEST_GUILD_ID: string;
+	client_id: string;
+	client_secret: string;
 }
