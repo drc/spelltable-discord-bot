@@ -45,7 +45,7 @@ export async function getNamedUrl(query: string) {
 		return null;
 	}
 	const data: CardResponse = await response.json();
-	if (data.card_faces.every((face) => face.image_uris)) {
+	if (data.card_faces?.every((face) => face.image_uris)) {
 		return {
 			namedUrl: [data.card_faces[0].image_uris?.large, data.card_faces[1].image_uris?.large].join(" "),
 			externalUrl: data.scryfall_uri,

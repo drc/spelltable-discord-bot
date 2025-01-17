@@ -1,7 +1,7 @@
 /**
  * The core server that runs on a Cloudflare worker.
  */
-import { Router, html } from "itty-router";
+import { Router } from "itty-router";
 import { InteractionType, verifyKey, InteractionResponseType } from "discord-interactions";
 import { handleApplicationCommand, handleApplicationAutoComplete, handleMessageCommand } from "./interactions.js";
 import JsonResponse from "./response.js";
@@ -28,16 +28,17 @@ router.get("/", (_, env) => {
 });
 
 router.get("/:user", async (request, env) => {
+	const headers = { "Content-Type": "image/jpeg", "Cache-Control": "no-cache" };
 	const user = request.params.user;
 	const card = await env["spelltable-spelltable"].get(user);
 	if (!card) {
 		const card_back_request = await fetch("https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg");
 		const card_back_blob = await card_back_request.blob();
-		return new Response(card_back_blob, { headers: { "content-type": "image/jpeg" } });
+		return new Response(card_back_blob, { headers });
 	}
 	const card_image_request = await fetch(card);
 	const card_image_data = await card_image_request.blob();
-	return new Response(card_image_data, { headers: { "content-type": "image/jpeg" } });
+	return new Response(card_image_data, { headers });
 });
 
 /**
