@@ -4,3 +4,4 @@ DISCORD_PUBLIC_KEY=
 DISCORD_TEST_GUILD_ID=
 client_id=
 client_secret=
+PRINTER_ENABLED=

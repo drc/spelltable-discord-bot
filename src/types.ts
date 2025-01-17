@@ -86,4 +86,5 @@ export interface Env {
 	DISCORD_TEST_GUILD_ID: string;
 	client_id: string;
 	client_secret: string;
+	PRINTER_ENABLED: string;
 }

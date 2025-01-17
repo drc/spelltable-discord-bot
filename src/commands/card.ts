@@ -37,6 +37,12 @@ async function handleJustTheCardName(cardName: string, userID: string, env: Env)
 				},
 			});
 		}
+
+		// date in YYYY-MM-DD format
+		const date = new Date().toISOString().split("T")[0];
+
+		await printCard(`searched for ${cardName} on ${date}`, namedUrl, userID, env);
+
 		// put the searched card in user's KV
 		await env["spelltable-spelltable"].put(userID, namedUrl);
 		return new JsonResponse({
@@ -62,6 +68,23 @@ async function handleJustTheCardName(cardName: string, userID: string, env: Env)
 	return new Response("Card not found", { status: 404 });
 }
 
+async function printCard(message: string, image_url: string, user: string, env: Env): Promise<void> {
+	if (env.PRINTER_ENABLED === "false") {
+		return;
+	}
+	await fetch("https://pryntyr.dancigrang.dev/api/card", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			message,
+			image_url,
+			user,
+		}),
+	});
+}
+
 async function handleSetCondition(set: string, cardName: string, userID: string, env: Env): Promise<Response> {
 	const result = await getAutoCompleteSets(cardName);
 	if (result) {
@@ -70,6 +93,9 @@ async function handleSetCondition(set: string, cardName: string, userID: string,
 		if (card.length > 0) {
 			const { url, uri } = card[0];
 			await env["spelltable-spelltable"].put(userID, url, { expirationTtl: 60 * 60 });
+
+			await printCard(cardName, url, userID, env);
+
 			return new JsonResponse({
 				type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
 				data: {
