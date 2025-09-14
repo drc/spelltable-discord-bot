@@ -5,5 +5,8 @@ workers_dev = true
 # node_compat = true
 
 kv_namespaces = [
-   { binding = "spelltable-spelltable", id = "ebd4e4fb5b5842e8be52161b332a03f6" }
+	{ binding = "spelltable-spelltable", id = "ebd4e4fb5b5842e8be52161b332a03f6" },
 ]
+
+[vars]
+PRINTER_ENABLED = true
