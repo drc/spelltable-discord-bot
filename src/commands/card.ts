@@ -97,7 +97,7 @@ async function printCard(
 	if (env.PRINTER_ENABLED === "false") {
 		return;
 	}
-	await fetch("https://pryntyr.dancigrang.dev/api/card", {
+	await fetch("https://camera.dancigrang.dev/api/card", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
