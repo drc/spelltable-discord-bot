@@ -1,9 +1,20 @@
+import {
+	ButtonStyleTypes,
+	InteractionResponseType,
+	MessageComponentTypes,
+} from "discord-interactions";
 import JsonResponse from "../response";
-import { InteractionResponseType, MessageComponentTypes, ButtonStyleTypes } from "discord-interactions";
-import { getRandomUrl, getNamedUrl, getAutoCompleteSets } from "./../scryfall.js";
+import {
+	getAutoCompleteSets,
+	getNamedUrl,
+	getRandomUrl,
+} from "./../scryfall.js";
 import type { DiscordInteraction, Env } from "../types.js";
 
-export default async function handleCardCommand(interaction: DiscordInteraction, env: Env): Promise<JsonResponse> {
+export default async function handleCardCommand(
+	interaction: DiscordInteraction,
+	env: Env,
+): Promise<JsonResponse> {
 	const set: string = interaction?.data?.options[1]?.value ?? "";
 	const cardName: string = interaction?.data?.options[0]?.value ?? "";
 	const userID: string = interaction?.member?.user?.username ?? "card";
@@ -25,7 +36,11 @@ export default async function handleCardCommand(interaction: DiscordInteraction,
 	});
 }
 
-async function handleJustTheCardName(cardName: string, userID: string, env: Env): Promise<Response> {
+async function handleJustTheCardName(
+	cardName: string,
+	userID: string,
+	env: Env,
+): Promise<Response> {
 	const result = await getNamedUrl(cardName);
 	if (result) {
 		const { namedUrl, externalUrl } = result;
@@ -41,7 +56,12 @@ async function handleJustTheCardName(cardName: string, userID: string, env: Env)
 		// date in YYYY-MM-DD format
 		const date = new Date().toISOString().split("T")[0];
 
-		await printCard(`searched for ${cardName} on ${date}`, namedUrl, userID, env);
+		await printCard(
+			`searched for ${cardName} on ${date}`,
+			namedUrl,
+			userID,
+			env,
+		);
 
 		// put the searched card in user's KV
 		await env["spelltable-spelltable"].put(userID, namedUrl);
@@ -68,7 +88,12 @@ async function handleJustTheCardName(cardName: string, userID: string, env: Env)
 	return new Response("Card not found", { status: 404 });
 }
 
-async function printCard(message: string, image_url: string, user: string, env: Env): Promise<void> {
+async function printCard(
+	message: string,
+	image_url: string,
+	user: string,
+	env: Env,
+): Promise<void> {
 	if (env.PRINTER_ENABLED === "false") {
 		return;
 	}
@@ -85,14 +110,21 @@ async function printCard(message: string, image_url: string, user: string, env: 
 	});
 }
 
-async function handleSetCondition(set: string, cardName: string, userID: string, env: Env): Promise<Response> {
+async function handleSetCondition(
+	set: string,
+	cardName: string,
+	userID: string,
+	env: Env,
+): Promise<Response> {
 	const result = await getAutoCompleteSets(cardName);
 	if (result) {
 		const { cardImages } = result;
 		const card = cardImages.filter((card) => card.set === set);
 		if (card.length > 0) {
 			const { url, uri } = card[0];
-			await env["spelltable-spelltable"].put(userID, url, { expirationTtl: 60 * 60 });
+			await env["spelltable-spelltable"].put(userID, url, {
+				expirationTtl: 60 * 60,
+			});
 
 			await printCard(cardName, url, userID, env);
 

@@ -1,5 +1,9 @@
+import {
+	ButtonStyleTypes,
+	InteractionResponseType,
+	MessageComponentTypes,
+} from "discord-interactions";
 import JsonResponse from "../response";
-import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
 
 // return response for new game
 export default function handleGameCommand(): JsonResponse {
